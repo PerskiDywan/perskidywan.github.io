@@ -2,8 +2,8 @@
 <html lang="en">
 <head>
   <meta charset="UTF-8" />
-  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
-  <title>Study Quiz App - Check Before Next</title>
+  <meta name="viewport" content="width=device-width, initial-scale=1" />
+  <title>Study Quiz App – Full Navigation</title>
   <script src="https://cdn.jsdelivr.net/npm/xlsx@0.18.5/dist/xlsx.full.min.js"></script>
   <style>
     html { box-sizing: border-box; -webkit-text-size-adjust: 100%; }
@@ -18,17 +18,12 @@
     }
     .container { max-width: 600px; margin: auto; }
     button {
-      background: #007AFF;
-      color: #fff;
-      border: none;
-      border-radius: 10px;
-      padding: 12px 20px;
-      margin: 0.5rem 0.5rem 0 0;
-      font-size: 1rem;
-      min-width: 44px;
-      min-height: 44px;
+      background: #007AFF; color: #fff; border: none;
+      border-radius: 10px; padding: 12px 20px;
+      margin: 0.5rem 0.5rem 0 0; font-size: 1rem;
+      min-width: 44px; min-height: 44px;
     }
-    button:disabled { background: #ccc; }
+    button:disabled { background: #ccc; cursor: not-allowed; }
     input[type=radio], input[type=checkbox] {
       width: 1.2rem; height: 1.2rem; accent-color: #007AFF;
     }
@@ -39,7 +34,7 @@
 </head>
 <body>
 <div class="container">
-  <h2>Study Quiz App (Check Before Next)</h2>
+  <h2>Study Quiz App (Full Navigation)</h2>
   <input type="file" id="upload" accept=".xlsx" />
   <div id="subject-picker"></div>
   <div id="quiz"></div>
@@ -49,7 +44,7 @@
 </div>
 <script>
 let allQuestions = [], selectedQuestions = [], currentQuestionIndex = 0;
-let userAnswers = {}, answerChecked = false;
+let userAnswers = {}, answerFeedback = {};
 
 document.getElementById('upload').addEventListener('change', function(e) {
   const reader = new FileReader();
@@ -80,19 +75,21 @@ function startQuiz() {
   const subject = document.getElementById('subject').value;
   selectedQuestions = allQuestions.filter(q => q.exam === subject);
   currentQuestionIndex = 0;
-  userAnswers = {}; showQuestion();
+  userAnswers = {}; answerFeedback = {};
+  showQuestion();
 }
 
 function isMulti(q) { return /(choose|select|pick)/i.test(q.question); }
 function extractLetter(opt) { return opt.split('.')[0]?.trim().toUpperCase(); }
 
 function showQuestion() {
-  answerChecked = false;
   const q = selectedQuestions[currentQuestionIndex];
   const saved = userAnswers[currentQuestionIndex] || [];
   const multi = isMulti(q);
+  const feedback = answerFeedback[currentQuestionIndex] || "";
+
   document.getElementById('quiz').innerHTML = `
-    <div class="question">Q${currentQuestionIndex + 1}: ${q.question}</div>
+    <div class="question">Q${currentQuestionIndex + 1} of ${selectedQuestions.length}: ${q.question}</div>
     <div class="options">${q.options.map((opt, i) => {
       const letter = extractLetter(opt);
       const checked = saved.includes(letter) ? "checked" : "";
@@ -101,11 +98,13 @@ function showQuestion() {
         <label for="opt${i}">${opt}</label>
       </div>`;
     }).join('')}</div>`;
+
   document.getElementById('buttons').innerHTML = `
+    <button onclick="prevQuestion()" ${currentQuestionIndex === 0 ? "disabled" : ""}>Previous</button>
     <button onclick="checkAnswer()">Check Answer</button>
-    <button id="nextBtn" onclick="nextQuestion()" disabled>Next</button>
+    <button onclick="nextQuestion()" ${currentQuestionIndex === selectedQuestions.length - 1 ? "" : ""}>Next</button>
   `;
-  document.getElementById('feedback').innerHTML = "";
+  document.getElementById('feedback').innerHTML = feedback;
 }
 
 function saveSelection(multi) {
@@ -118,22 +117,24 @@ function checkAnswer() {
   const selected = userAnswers[currentQuestionIndex] || [];
   const correct = selectedQuestions[currentQuestionIndex].correct.slice().sort();
   const isCorrect = selected.slice().sort().join() === correct.join();
-  document.getElementById('feedback').innerHTML = isCorrect
+  const feedback = isCorrect
     ? '<span style="color:green">Correct!</span>'
     : '<span style="color:red">Wrong! Correct: ' + correct.join(', ') + '</span>';
-  answerChecked = true;
-  document.getElementById('nextBtn').disabled = false;
+  answerFeedback[currentQuestionIndex] = feedback;
+  document.getElementById('feedback').innerHTML = feedback;
 }
 
 function nextQuestion() {
-  if (!answerChecked) return;
   if (currentQuestionIndex < selectedQuestions.length - 1) {
     currentQuestionIndex++;
     showQuestion();
-  } else {
-    document.getElementById('quiz').innerHTML = '<p>Quiz complete!</p>';
-    document.getElementById('buttons').innerHTML = "";
-    document.getElementById('feedback').innerHTML = "";
+  }
+}
+
+function prevQuestion() {
+  if (currentQuestionIndex > 0) {
+    currentQuestionIndex--;
+    showQuestion();
   }
 }
 </script>
