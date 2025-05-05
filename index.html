@@ -5,6 +5,32 @@
   <meta name="viewport" content="width=device-width, initial-scale=1" />
   <title>Examer</title>
   <script src="https://cdn.jsdelivr.net/npm/xlsx@0.18.5/dist/xlsx.full.min.js"></script>
+  <style>
+    html { box-sizing: border-box; -webkit-text-size-adjust: 100%; }
+    *, *::before, *::after { box-sizing: inherit; }
+    body {
+      font-family: -apple-system, BlinkMacSystemFont, sans-serif;
+      margin: 0;
+      padding: 1rem;
+      background: #fff;
+      color: #000;
+      font-size: 18px;
+    }
+    .container { max-width: 600px; margin: auto; }
+    button {
+      background: #007AFF; color: #fff; border: none;
+      border-radius: 10px; padding: 12px 20px;
+      margin: 0.5rem 0.5rem 0 0; font-size: 1rem;
+      min-width: 44px; min-height: 44px;
+    }
+    button:disabled { background: #ccc; cursor: not-allowed; }
+    input[type=radio], input[type=checkbox] {
+      width: 1.2rem; height: 1.2rem; accent-color: #007AFF;
+    }
+    .question { font-weight: bold; font-size: 1.2rem; margin: 1rem 0; }
+    .options div { margin-bottom: 0.5rem; }
+    .feedback { margin-top: 1rem; font-weight: bold; }
+  </style>
 </head>
 <body>
   <h2>Examer</h2>
