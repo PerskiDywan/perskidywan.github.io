@@ -3,46 +3,17 @@
 <head>
   <meta charset="UTF-8" />
   <meta name="viewport" content="width=device-width, initial-scale=1" />
-  <title>Examer - Full Navigation</title>
+  <title>Examer</title>
   <script src="https://cdn.jsdelivr.net/npm/xlsx@0.18.5/dist/xlsx.full.min.js"></script>
-  <style>
-    html { box-sizing: border-box; -webkit-text-size-adjust: 100%; }
-    *, *::before, *::after { box-sizing: inherit; }
-    body {
-      font-family: -apple-system, BlinkMacSystemFont, sans-serif;
-      margin: 0;
-      padding: 1rem;
-      background: #fff;
-      color: #000;
-      font-size: 18px;
-    }
-    .container { max-width: 600px; margin: auto; }
-    button {
-      background: #007AFF; color: #fff; border: none;
-      border-radius: 10px; padding: 12px 20px;
-      margin: 0.5rem 0.5rem 0 0; font-size: 1rem;
-      min-width: 44px; min-height: 44px;
-    }
-    button:disabled { background: #ccc; cursor: not-allowed; }
-    input[type=radio], input[type=checkbox] {
-      width: 1.2rem; height: 1.2rem; accent-color: #007AFF;
-    }
-    .question { font-weight: bold; font-size: 1.2rem; margin: 1rem 0; }
-    .options div { margin-bottom: 0.5rem; }
-    .feedback { margin-top: 1rem; font-weight: bold; }
-  </style>
 </head>
 <body>
-<div class="container">
   <h2>Examer</h2>
+  <p>Upload your Excel file to begin.</p>
   <input type="file" id="upload" accept=".xlsx" />
-  <div id="subject-picker"></div>
   <div id="quiz"></div>
   <div id="buttons"></div>
   <div id="feedback"></div>
-  <div id="error"></div>
-</div>
-<script>
+  <script>
 let allQuestions = [], selectedQuestions = [], currentQuestionIndex = 0;
 let userAnswers = {}, answerFeedback = {};
 
@@ -57,59 +28,40 @@ document.getElementById('upload').addEventListener('change', function(e) {
       options: q.Answer?.split(/\r?\n/).map(opt => opt.trim()).filter(Boolean),
       correct: q.Correct?.toUpperCase().split(',').map(a => a.trim())
     })).filter(q => q.exam && q.question && q.options?.length && q.correct?.length);
-    showSubjectPicker();
+    selectedQuestions = allQuestions; showQuestion();
   };
   reader.readAsArrayBuffer(e.target.files[0]);
 });
-
-function showSubjectPicker() {
-  const subjects = [...new Set(allQuestions.map(q => q.exam))].sort();
-  document.getElementById('subject-picker').innerHTML = `
-    <label>Select exam:</label>
-    <select id="subject">${subjects.map(s => `<option>${s}</option>`).join('')}</select>
-    <button onclick="startQuiz()">Start Quiz</button>
-  `;
-}
-
-function startQuiz() {
-  const subject = document.getElementById('subject').value;
-  selectedQuestions = allQuestions.filter(q => q.exam === subject);
-  currentQuestionIndex = 0;
-  userAnswers = {}; answerFeedback = {};
-  showQuestion();
-}
 
 function isMulti(q) { return /(choose|select|pick)/i.test(q.question); }
 function extractLetter(opt) { return opt.split('.')[0]?.trim().toUpperCase(); }
 
 function showQuestion() {
   const q = selectedQuestions[currentQuestionIndex];
-  const saved = userAnswers[currentQuestionIndex] || [];
   const multi = isMulti(q);
+  const saved = userAnswers[currentQuestionIndex] || [];
   const feedback = answerFeedback[currentQuestionIndex] || "";
-
   document.getElementById('quiz').innerHTML = `
-    <div class="question">Q${currentQuestionIndex + 1} of ${selectedQuestions.length}: ${q.question}</div>
-    <div class="options">${q.options.map((opt, i) => {
+    <div><strong>Q${currentQuestionIndex + 1}</strong>: ${q.question}</div>
+    <div>${q.options.map((opt, i) => {
       const letter = extractLetter(opt);
       const checked = saved.includes(letter) ? "checked" : "";
       return `<div>
-        <input type="${multi ? 'checkbox' : 'radio'}" id="opt${i}" name="q${currentQuestionIndex}" value="${letter}" ${checked} onchange="saveSelection(${multi})" />
+        <input type="${multi ? 'checkbox' : 'radio'}" name="q${currentQuestionIndex}" id="opt${i}" value="${letter}" ${checked}
+          onchange="saveSelection(${multi})" />
         <label for="opt${i}">${opt}</label>
       </div>`;
     }).join('')}</div>`;
-
   document.getElementById('buttons').innerHTML = `
-    <button onclick="prevQuestion()" ${currentQuestionIndex === 0 ? "disabled" : ""}>Previous</button>
+    <button onclick="prev()">Previous</button>
     <button onclick="checkAnswer()">Check Answer</button>
-    <button onclick="nextQuestion()" ${currentQuestionIndex === selectedQuestions.length - 1 ? "" : ""}>Next</button>
-  `;
+    <button onclick="next()">Next</button>`;
   document.getElementById('feedback').innerHTML = feedback;
 }
 
 function saveSelection(multi) {
-  const checked = document.querySelectorAll(`input[name="q${currentQuestionIndex}"]:checked`);
-  userAnswers[currentQuestionIndex] = Array.from(checked).map(i => i.value.trim().toUpperCase());
+  const selected = document.querySelectorAll(`input[name="q${currentQuestionIndex}"]:checked`);
+  userAnswers[currentQuestionIndex] = Array.from(selected).map(el => el.value.trim().toUpperCase());
 }
 
 function checkAnswer() {
@@ -119,21 +71,21 @@ function checkAnswer() {
   const isCorrect = selected.slice().sort().join() === correct.join();
   const feedback = isCorrect
     ? '<span style="color:green">Correct!</span>'
-    : '<span style="color:red">Wrong! Correct: ' + correct.join(', ') + '</span>';
+    : '<span style="color:red">Incorrect.</span>';
   answerFeedback[currentQuestionIndex] = feedback;
   document.getElementById('feedback').innerHTML = feedback;
 }
 
-function nextQuestion() {
-  if (currentQuestionIndex < selectedQuestions.length - 1) {
-    currentQuestionIndex++;
+function prev() {
+  if (currentQuestionIndex > 0) {
+    currentQuestionIndex--;
     showQuestion();
   }
 }
 
-function prevQuestion() {
-  if (currentQuestionIndex > 0) {
-    currentQuestionIndex--;
+function next() {
+  if (currentQuestionIndex < selectedQuestions.length - 1) {
+    currentQuestionIndex++;
     showQuestion();
   }
 }
