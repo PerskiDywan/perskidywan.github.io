@@ -4,7 +4,7 @@
 <head>
   <meta charset="UTF-8" />
   <meta name="viewport" content="width=device-width, initial-scale=1" />
-  <title>Study Quiz App – Full Navigation</title>
+  <title>Examer</title>
   <script src="https://cdn.jsdelivr.net/npm/xlsx@0.18.5/dist/xlsx.full.min.js"></script>
   <style>
     body {
@@ -14,34 +14,19 @@
       background-color: #fff;
       color: #000;
     }
-    .container {
-      max-width: 800px;
-      margin: auto;
-    }
-    h2 {
-      font-size: 1.5rem;
-      margin-bottom: 1rem;
-    }
+    .container { max-width: 800px; margin: auto; }
+    h2 { font-size: 1.5rem; margin-bottom: 1rem; }
     button {
-      background-color: #007AFF;
-      color: #fff;
-      border: none;
-      border-radius: 12px;
-      padding: 12px 20px;
-      font-size: 1rem;
+      background-color: #007AFF; color: #fff;
+      border: none; border-radius: 12px;
+      padding: 12px 20px; font-size: 1rem;
       margin: 0.5rem 0.5rem 0 0;
-      min-width: 44px;
-      min-height: 44px;
+      min-width: 44px; min-height: 44px;
     }
-    button:disabled {
-      background-color: #ccc;
-      cursor: not-allowed;
-    }
+    button:disabled { background-color: #ccc; cursor: not-allowed; }
     .question-list {
-      display: flex;
-      flex-wrap: wrap;
-      gap: 0.5rem;
-      margin-bottom: 1rem;
+      display: flex; flex-wrap: wrap; gap: 0.5rem;
+      margin-top: 1rem;
     }
     .question-list button {
       font-size: 0.85rem;
@@ -59,16 +44,14 @@
       width: 100%;
       font-size: 1rem;
       padding: 0.5rem;
-      margin-bottom: 1rem;
       border-radius: 8px;
+      margin-top: 1rem;
     }
     .question {
       font-weight: 600;
       margin: 1rem 0 0.5rem;
     }
-    .options div {
-      margin-bottom: 0.75rem;
-    }
+    .options div { margin-bottom: 0.75rem; }
     .feedback {
       font-weight: bold;
       margin-top: 1rem;
@@ -77,13 +60,13 @@
 </head>
 <body>
 <div class="container">
-  <h2>Study Quiz App – Full Navigation</h2>
+  <h2>Examer</h2>
   <input type="file" id="upload" accept=".xlsx" />
   <div id="subject-picker"></div>
-  <div id="question-nav"></div>
   <div id="quiz"></div>
   <div id="buttons"></div>
   <div id="feedback"></div>
+  <div id="question-nav"></div>
 </div>
 <script>
 let allQuestions = [], selectedQuestions = [], currentQuestionIndex = 0;
@@ -135,25 +118,6 @@ function showQuestion() {
   const multi = isMulti(q);
   const feedback = answerFeedback[currentQuestionIndex] || "";
 
-  const dropdown = `
-    <label>Jump to question:</label>
-    <select onchange="jumpToQuestion(this.value)">
-      ${selectedQuestions.map((q, i) => `<option value="${i}" ${i === currentQuestionIndex ? "selected" : ""}>
-        Q${i + 1}: ${q.question.slice(0, 60)}${q.question.length > 60 ? "..." : ""}
-      </option>`).join('')}
-    </select>
-  `;
-
-  const buttonList = `
-    <div class="question-list">
-      ${selectedQuestions.map((_, i) =>
-        `<button onclick="jumpToQuestion(${i})" class="${i === currentQuestionIndex ? "active" : ""}">Q${i + 1}</button>`
-      ).join('')}
-    </div>
-  `;
-
-  document.getElementById('question-nav').innerHTML = dropdown + buttonList;
-
   document.getElementById('quiz').innerHTML = `
     <div class="question">Q${currentQuestionIndex + 1} of ${selectedQuestions.length}: ${q.question}</div>
     <div class="options">${q.options.map((opt, i) => {
@@ -174,6 +138,19 @@ function showQuestion() {
   `;
 
   document.getElementById('feedback').innerHTML = feedback;
+
+  document.getElementById('question-nav').innerHTML = `
+    <select onchange="jumpToQuestion(this.value)">
+      ${selectedQuestions.map((q, i) => `<option value="${i}" ${i === currentQuestionIndex ? "selected" : ""}>
+        Q${i + 1}: ${q.question.slice(0, 60)}${q.question.length > 60 ? "..." : ""}
+      </option>`).join('')}
+    </select>
+    <div class="question-list">
+      ${selectedQuestions.map((_, i) =>
+        `<button onclick="jumpToQuestion(${i})" class="${i === currentQuestionIndex ? "active" : ""}">Q${i + 1}</button>`
+      ).join('')}
+    </div>
+  `;
 }
 
 function saveSelection(multi) {
