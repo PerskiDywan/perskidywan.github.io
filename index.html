@@ -84,6 +84,7 @@ button.warn.active { background:var(--soft-warn); color:var(--warn); border-colo
       <button class="filter bad" data-filter="wrong">Wrong</button>
       <button class="filter warn" data-filter="answered">Answered</button>
       <button class="filter" data-filter="unanswered">Not answered</button>
+      <button id="toggleAllAnswers" aria-pressed="false" title="Show or hide answers across all test sets">Show all answers</button>
       <button id="nextUnanswered">Next unanswered</button>
       <button id="resetSet">Reset this test</button>
       <button id="resetAll">Reset all</button>
@@ -227,6 +228,10 @@ function renderAnswer(q, s) {
   return `<div class="answerbox ${s.revealed?'show':''}" id="ans_${q.id}">${inner}</div>`;
 }
 function renderQuestions() {
+  const allRevealed = QUESTIONS.every(q => qState(q.id).revealed);
+  const answerButton = document.getElementById('toggleAllAnswers');
+  answerButton.textContent = allRevealed ? 'Hide all answers' : 'Show all answers';
+  answerButton.setAttribute('aria-pressed', String(allRevealed));
   const qs=filteredQuestions();
   document.getElementById('questionList').innerHTML = qs.length ? qs.map(renderQuestion).join('') : '<section class="panel">No questions match this filter.</section>';
   const s=calcStats();
@@ -261,6 +266,12 @@ function clearQuestion(id) { const s=qState(id); setQState(id, {selected:[], sub
 function escapeHtml(x) { return String(x ?? '').replace(/[&<>"]/g, c=>({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;'}[c])); }
 function attr(x) { return escapeHtml(x).replace(/'/g,'&#39;'); }
 document.querySelectorAll('.filter').forEach(b=>b.onclick=()=>{ currentFilter=b.dataset.filter; render(); });
+document.getElementById('toggleAllAnswers').onclick=()=>{
+  const revealed = !QUESTIONS.every(q => qState(q.id).revealed);
+  QUESTIONS.forEach(q => { state[q.id] = Object.assign({}, qState(q.id), {revealed}); });
+  saveState();
+  renderQuestions();
+};
 document.getElementById('nextUnanswered').onclick=()=>{ const q=currentQuestions().find(x=>!isAnswered(x)); if(q) document.getElementById(q.id)?.scrollIntoView({behavior:'smooth', block:'start'}); };
 document.getElementById('resetSet').onclick=()=>{ if(confirm('Reset this test?')) { currentQuestions().forEach(q=>delete state[q.id]); saveState(); render(); } };
 document.getElementById('resetAll').onclick=()=>{ if(confirm('Reset all tests?')) { state={}; saveState(); render(); } };
