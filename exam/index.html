@@ -447,7 +447,7 @@
       border-top: 1px solid var(--line);
       padding-top: 14px;
     }
-    .revealed .explanation { display: block; }
+    .revealed .explanation, .study-revealed .explanation { display: block; }
     .explanation h3 {
       font-size: 16px;
       margin: 0 0 8px;
@@ -561,6 +561,7 @@
             <option value="unresolved">Manual review</option>
           </select>
         </label>
+        <button id="toggleAllAnswers" class="ghost-btn" type="button" aria-pressed="false" title="Show or hide answers for every question">Show all answers</button>
         <button id="resetBtn" class="ghost-btn" type="button" title="Clear saved answers and results">Reset</button>
       </div>
       <nav id="sectionNav" class="section-nav" aria-label="Quiz sections"></nav>
@@ -640,6 +641,7 @@
       ).join('');
       bindQuestionEvents();
       restoreSelections();
+      restoreAnswerVisibility();
       applyFilters();
       updateStats();
     }
@@ -879,7 +881,7 @@
           const input = card.querySelector(`input[value="${CSS.escape(letter)}"]`);
           if (input) input.checked = true;
         });
-        if (savedQ.checked) revealQuestion(q.id, false);
+        if (savedQ.checked && savedQ.revealed !== false) revealQuestion(q.id, false);
       });
     }
     function selectedLetters(card) {
@@ -900,6 +902,7 @@
         saved[qid] = saved[qid] || {};
         saved[qid].dnd = saved[qid].dnd || {};
         saved[qid].checked = true;
+      saved[qid].revealed = true;
         saved[qid].correct = dndIsCorrect(q, saved[qid].dnd);
         saveState();
         revealQuestion(qid, true);
@@ -911,6 +914,7 @@
       saved[qid] = saved[qid] || {};
       saved[qid].selected = selected;
       saved[qid].checked = true;
+      saved[qid].revealed = true;
       saved[qid].correct = q.correct.length ? sameLetters(selected, [...q.correct].sort()) : Boolean(q.answerText);
       saveState();
       revealQuestion(qid, true);
@@ -973,7 +977,31 @@
           result.textContent = savedQ.correct ? 'Correct.' : 'Review this one.';
         }
       }
+      updateAnswerButton();
       if (announce) card.querySelector('.explanation')?.scrollIntoView({behavior: 'smooth', block: 'nearest'});
+    }
+    function updateAnswerButton() {
+      const allShown = questions.every(q => {
+        const card = document.getElementById(q.id);
+        return card && (card.classList.contains('revealed') || card.classList.contains('study-revealed'));
+      });
+      const button = document.getElementById('toggleAllAnswers');
+      button.textContent = allShown ? 'Hide all answers' : 'Show all answers';
+      button.setAttribute('aria-pressed', String(allShown));
+    }
+    function restoreAnswerVisibility() {
+      questions.forEach(q => {
+        document.getElementById(q.id)?.classList.toggle('study-revealed', saved[q.id]?.revealed === true);
+      });
+      updateAnswerButton();
+    }
+    function toggleAllAnswers() {
+      const show = document.getElementById('toggleAllAnswers').getAttribute('aria-pressed') !== 'true';
+      questions.forEach(q => {
+        saved[q.id] = {...(saved[q.id] || {}), revealed: show};
+      });
+      saveState();
+      render();
     }
     function checkVisible() {
       document.querySelectorAll('.question-card:not(.hidden)').forEach(card => checkQuestion(card.dataset.qid));
@@ -1011,6 +1039,7 @@
     }
     document.getElementById('searchBox').addEventListener('input', () => applyFilters(false));
     document.getElementById('filterMode').addEventListener('change', () => applyFilters());
+    document.getElementById('toggleAllAnswers').addEventListener('click', toggleAllAnswers);
     document.getElementById('checkVisibleBtn').addEventListener('click', checkVisible);
     document.getElementById('resetBtn').addEventListener('click', () => {
       if (!confirm('Clear saved answers and results?')) return;
