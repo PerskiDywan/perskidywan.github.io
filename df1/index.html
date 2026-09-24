@@ -213,6 +213,10 @@
       scroll-margin-top: 76px;
     }
     .question-card.hidden { display: none; }
+    .study-flags { display: flex; flex-wrap: wrap; gap: 12px 24px; margin: 16px 0 0; padding-top: 12px; border-top: 1px solid var(--line); }
+    .study-flags label { display: inline-flex; align-items: center; gap: 8px; cursor: pointer; }
+    .study-flags input { width: 18px; height: 18px; accent-color: var(--brand); }
+    .study-flags input:focus-visible { outline: 3px solid var(--focus); outline-offset: 2px; }
     .q-meta {
       display: flex;
       gap: 8px;
@@ -447,7 +451,7 @@
       border-top: 1px solid var(--line);
       padding-top: 14px;
     }
-    .revealed .explanation, .study-revealed .explanation { display: block; }
+    .revealed .explanation { display: block; }
     .explanation h3 {
       font-size: 16px;
       margin: 0 0 8px;
@@ -557,12 +561,13 @@
           <select id="filterMode">
             <option value="all">All questions</option>
             <option value="unanswered">Unchecked</option>
-            <option value="wrong">Review needed</option>
+            <option value="wrong">Incorrect answers</option>
+            <option value="needReview">Need to review</option>
+            <option value="alreadyKnown">Already known</option>
             <option value="unresolved">Manual review</option>
           </select>
         </label>
-        <button id="toggleAllAnswers" class="ghost-btn" type="button" aria-pressed="false" title="Show or hide answers for every question">Show all answers</button>
-        <button id="resetBtn" class="ghost-btn" type="button" title="Clear saved answers and results">Reset</button>
+        <button id="resetBtn" class="ghost-btn" type="button" title="Clear saved answers, results, and study flags">Reset</button>
       </div>
       <nav id="sectionNav" class="section-nav" aria-label="Quiz sections"></nav>
     </aside>
@@ -641,7 +646,6 @@
       ).join('');
       bindQuestionEvents();
       restoreSelections();
-      restoreAnswerVisibility();
       applyFilters();
       updateStats();
     }
@@ -718,6 +722,10 @@
           <p class="question-text">${esc(q.question)}</p>
           ${renderQuestionImages(q)}
           <div class="options">${options}</div>
+          <div class="study-flags" role="group" aria-label="Study flags for question ${esc(q.globalNumber)}">
+            <label><input type="checkbox" data-study-flag="needReview" ${savedQ.needReview ? 'checked' : ''} /> Need to review</label>
+            <label><input type="checkbox" data-study-flag="alreadyKnown" ${savedQ.alreadyKnown ? 'checked' : ''} /> Already known</label>
+          </div>
           <div class="card-actions">
             <button class="check-btn" type="button" data-check="${esc(q.id)}" title="Check this question">Check</button>
             <span class="result" data-result="${esc(q.id)}">${savedQ.checked ? '' : prompt}</span>
@@ -774,6 +782,13 @@
         saved[qid] = saved[qid] || {};
         saved[qid].selected = selectedLetters(card);
         saveState();
+      }));
+      document.querySelectorAll('[data-study-flag]').forEach(input => input.addEventListener('change', () => {
+        const qid = input.closest('.question-card').dataset.qid;
+        saved[qid] = saved[qid] || {};
+        saved[qid][input.dataset.studyFlag] = input.checked;
+        saveState();
+        applyFilters(false);
       }));
       bindDndEvents();
     }
@@ -881,11 +896,11 @@
           const input = card.querySelector(`input[value="${CSS.escape(letter)}"]`);
           if (input) input.checked = true;
         });
-        if (savedQ.checked && savedQ.revealed !== false) revealQuestion(q.id, false);
+        if (savedQ.checked) revealQuestion(q.id, false);
       });
     }
     function selectedLetters(card) {
-      return [...card.querySelectorAll('input:checked')].map(input => input.value).sort();
+      return [...card.querySelectorAll('.option input:checked')].map(input => input.value).sort();
     }
     function sameLetters(a, b) {
       return a.length === b.length && a.every((value, i) => value === b[i]);
@@ -902,7 +917,6 @@
         saved[qid] = saved[qid] || {};
         saved[qid].dnd = saved[qid].dnd || {};
         saved[qid].checked = true;
-      saved[qid].revealed = true;
         saved[qid].correct = dndIsCorrect(q, saved[qid].dnd);
         saveState();
         revealQuestion(qid, true);
@@ -914,7 +928,6 @@
       saved[qid] = saved[qid] || {};
       saved[qid].selected = selected;
       saved[qid].checked = true;
-      saved[qid].revealed = true;
       saved[qid].correct = q.correct.length ? sameLetters(selected, [...q.correct].sort()) : Boolean(q.answerText);
       saveState();
       revealQuestion(qid, true);
@@ -977,31 +990,7 @@
           result.textContent = savedQ.correct ? 'Correct.' : 'Review this one.';
         }
       }
-      updateAnswerButton();
       if (announce) card.querySelector('.explanation')?.scrollIntoView({behavior: 'smooth', block: 'nearest'});
-    }
-    function updateAnswerButton() {
-      const allShown = questions.every(q => {
-        const card = document.getElementById(q.id);
-        return card && (card.classList.contains('revealed') || card.classList.contains('study-revealed'));
-      });
-      const button = document.getElementById('toggleAllAnswers');
-      button.textContent = allShown ? 'Hide all answers' : 'Show all answers';
-      button.setAttribute('aria-pressed', String(allShown));
-    }
-    function restoreAnswerVisibility() {
-      questions.forEach(q => {
-        document.getElementById(q.id)?.classList.toggle('study-revealed', saved[q.id]?.revealed === true);
-      });
-      updateAnswerButton();
-    }
-    function toggleAllAnswers() {
-      const show = document.getElementById('toggleAllAnswers').getAttribute('aria-pressed') !== 'true';
-      questions.forEach(q => {
-        saved[q.id] = {...(saved[q.id] || {}), revealed: show};
-      });
-      saveState();
-      render();
     }
     function checkVisible() {
       document.querySelectorAll('.question-card:not(.hidden)').forEach(card => checkQuestion(card.dataset.qid));
@@ -1025,6 +1014,8 @@
         const state = saved[qid] || {};
         let visible = true;
         if (query && !card.dataset.search.includes(query)) visible = false;
+        if (mode === 'needReview' && !state.needReview) visible = false;
+        if (mode === 'alreadyKnown' && !state.alreadyKnown) visible = false;
         if (mode === 'unanswered' && state.checked) visible = false;
         if (mode === 'wrong' && (!state.checked || state.correct)) visible = false;
         if (mode === 'unresolved' && card.dataset.unresolved !== '1') visible = false;
@@ -1039,10 +1030,9 @@
     }
     document.getElementById('searchBox').addEventListener('input', () => applyFilters(false));
     document.getElementById('filterMode').addEventListener('change', () => applyFilters());
-    document.getElementById('toggleAllAnswers').addEventListener('click', toggleAllAnswers);
     document.getElementById('checkVisibleBtn').addEventListener('click', checkVisible);
     document.getElementById('resetBtn').addEventListener('click', () => {
-      if (!confirm('Clear saved answers and results?')) return;
+      if (!confirm('Clear saved answers, results, and study flags?')) return;
       saved = {};
       localStorage.removeItem(stateKey);
       render();
