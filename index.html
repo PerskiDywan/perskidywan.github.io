@@ -8,19 +8,20 @@
     :root { color-scheme: light; font-family: Arial, Helvetica, sans-serif; color: #14202b; background: #f4f8fa; }
     * { box-sizing: border-box; }
     body { margin: 0; min-height: 100vh; display: grid; place-items: center; padding: 24px; }
-    main { width: 100%; max-width: 760px; }
+    main { width: 100%; max-width: 1000px; }
     .eyebrow { color: #106b6f; font-size: 13px; font-weight: 700; letter-spacing: .12em; text-transform: uppercase; }
     h1 { margin: 12px 0; font-size: clamp(32px, 6vw, 48px); letter-spacing: -.04em; }
     .intro { margin: 0 0 32px; color: #647485; font-size: 18px; }
-    nav { display: grid; grid-template-columns: repeat(2, minmax(0, 1fr)); gap: 18px; }
-    a { display: flex; flex-direction: column; align-items: flex-start; min-height: 210px; padding: 28px; border: 1px solid #d9e2ec; border-radius: 16px; background: #fff; color: inherit; text-decoration: none; box-shadow: 0 8px 24px rgba(20,32,43,.04); transition: border-color .15s, box-shadow .15s; }
+    nav { display: grid; grid-template-columns: repeat(3, minmax(0, 1fr)); gap: 18px; }
+    a { display: flex; flex-direction: column; align-items: flex-start; min-height: 230px; padding: 28px; border: 1px solid #d9e2ec; border-radius: 16px; background: #fff; color: inherit; text-decoration: none; box-shadow: 0 8px 24px rgba(20,32,43,.04); transition: border-color .15s, box-shadow .15s; }
     a:hover { border-color: #106b6f; box-shadow: 0 8px 24px rgba(16,107,111,.1); }
     a:focus-visible { outline: 3px solid #106b6f; outline-offset: 5px; }
     .number { color: #647485; font-size: 13px; }
     h2 { margin: 12px 0 24px; font-size: 26px; }
+    h2 small { display: block; margin-top: 8px; font-size: 16px; font-weight: 400; color: #647485; }
     .open { margin-top: auto; display: inline-block; border-radius: 7px; padding: 10px 16px; background: #106b6f; color: #fff; font-size: 14px; font-weight: 700; }
     .note { margin: 24px 0 0; color: #647485; font-size: 13px; }
-    @media (max-width: 520px) { nav { grid-template-columns: 1fr; } a { min-height: 180px; } }
+    @media (max-width: 760px) { nav { grid-template-columns: 1fr; } a { min-height: 180px; } }
     @media (prefers-reduced-motion: reduce) { a { transition: none; } }
   </style>
 </head>
@@ -40,8 +41,13 @@
         <h2>DF2</h2>
         <span class="open">Open test <span aria-hidden="true">&rarr;</span></span>
       </a>
+      <a href="df1/index50.html">
+        <span class="number">TEST 03</span>
+        <h2>DF1 <small>50 questions per section</small></h2>
+        <span class="open">Open test <span aria-hidden="true">&rarr;</span></span>
+      </a>
     </nav>
-    <p class="note">Pick up where you left off. Each test saves progress in your browser.</p>
+    <p class="note">Pick up where you left off. Progress is saved in your browser.</p>
   </main>
 </body>
 </html>
