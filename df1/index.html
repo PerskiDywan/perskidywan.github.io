@@ -212,6 +212,7 @@
       padding: 18px;
       scroll-margin-top: 76px;
     }
+    .ghost-btn[aria-pressed="true"] { background: var(--brand); border-color: var(--brand); color: white; }
     .question-card.hidden { display: none; }
     .study-flags { display: flex; flex-wrap: wrap; gap: 12px 24px; margin: 16px 0 0; padding-top: 12px; border-top: 1px solid var(--line); }
     .study-flags label { display: inline-flex; align-items: center; gap: 8px; cursor: pointer; }
@@ -567,6 +568,7 @@
             <option value="unresolved">Manual review</option>
           </select>
         </label>
+        <button id="toggleKnownBtn" class="ghost-btn" type="button" aria-pressed="false" title="Toggle visibility of questions marked Already known">Hide already known</button>
         <button id="resetAnswersBtn" class="ghost-btn" type="button" title="Clear answers and results for all questions; keep study checkboxes">Clear answers</button>
         <button id="resetFlagsBtn" class="ghost-btn" type="button" title="Clear Need to review and Already known for all questions; keep answers and results">Clear study checkboxes</button>
       </div>
@@ -1009,11 +1011,13 @@
     function applyFilters(scrollTop = true) {
       const query = document.getElementById('searchBox').value.trim().toLowerCase();
       const mode = document.getElementById('filterMode').value;
+      const hideKnown = document.getElementById('toggleKnownBtn').getAttribute('aria-pressed') === 'true';
       let visibleCount = 0;
       document.querySelectorAll('.question-card').forEach(card => {
         const qid = card.dataset.qid;
         const state = saved[qid] || {};
         let visible = true;
+        if (hideKnown && state.alreadyKnown) visible = false;
         if (query && !card.dataset.search.includes(query)) visible = false;
         if (mode === 'needReview' && !state.needReview) visible = false;
         if (mode === 'alreadyKnown' && !state.alreadyKnown) visible = false;
@@ -1029,6 +1033,13 @@
       document.getElementById('emptyState').classList.toggle('visible', visibleCount === 0);
       if (scrollTop) window.scrollTo({top: 0, behavior: 'smooth'});
     }
+    document.getElementById('toggleKnownBtn').addEventListener('click', () => {
+      const button = document.getElementById('toggleKnownBtn');
+      const hideKnown = button.getAttribute('aria-pressed') !== 'true';
+      button.setAttribute('aria-pressed', String(hideKnown));
+      button.textContent = hideKnown ? 'Show already known' : 'Hide already known';
+      applyFilters(false);
+    });
     document.getElementById('searchBox').addEventListener('input', () => applyFilters(false));
     document.getElementById('filterMode').addEventListener('change', () => applyFilters());
     document.getElementById('checkVisibleBtn').addEventListener('click', checkVisible);
