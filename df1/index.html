@@ -567,7 +567,8 @@
             <option value="unresolved">Manual review</option>
           </select>
         </label>
-        <button id="resetBtn" class="ghost-btn" type="button" title="Clear saved answers, results, and study flags">Reset</button>
+        <button id="resetAnswersBtn" class="ghost-btn" type="button" title="Clear answers and results for all questions; keep study checkboxes">Clear answers</button>
+        <button id="resetFlagsBtn" class="ghost-btn" type="button" title="Clear Need to review and Already known for all questions; keep answers and results">Clear study checkboxes</button>
       </div>
       <nav id="sectionNav" class="section-nav" aria-label="Quiz sections"></nav>
     </aside>
@@ -1031,10 +1032,26 @@
     document.getElementById('searchBox').addEventListener('input', () => applyFilters(false));
     document.getElementById('filterMode').addEventListener('change', () => applyFilters());
     document.getElementById('checkVisibleBtn').addEventListener('click', checkVisible);
-    document.getElementById('resetBtn').addEventListener('click', () => {
-      if (!confirm('Clear saved answers, results, and study flags?')) return;
-      saved = {};
-      localStorage.removeItem(stateKey);
+    document.getElementById('resetAnswersBtn').addEventListener('click', () => {
+      if (!confirm('Clear answers and results for all questions? Your study checkboxes will be kept.')) return;
+      Object.values(saved).forEach(state => {
+        delete state.selected;
+        delete state.dnd;
+        delete state.checked;
+        delete state.correct;
+      });
+      selectedDndTerm = null;
+      saveState();
+      render();
+    });
+    document.getElementById('resetFlagsBtn').addEventListener('click', () => {
+      if (!confirm('Clear Need to review and Already known for all questions? Your answers and results will be kept.')) return;
+      Object.values(saved).forEach(state => {
+        delete state.needReview;
+        delete state.alreadyKnown;
+      });
+      selectedDndTerm = null;
+      saveState();
       render();
     });
     render();
